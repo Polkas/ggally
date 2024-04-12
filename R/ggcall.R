@@ -33,44 +33,6 @@ ggplot <- function(...) {
   plot
 }
 
-#' Custom '+' Operator for ggcall Objects
-#'
-#' Enhances the '+' operator for ggplot objects to track the history of
-#' plot layers and modifications. This function is meant to be used in
-#' conjunction with the enhanced ggplot function provided by this package.
-#'
-#' @param e1 A ggplot object of class 'ggcall'.
-#' @param e2 A layer or theme to add to the ggplot object.
-#'
-#' @return A modified ggplot object with updated plot history.
-#' @examples
-#' p <- ggplot(mtcars, aes(x=wt, y=mpg)) + geom_point()
-#' attr(p, "ggcall") # View the plot call
-#'
-#' @export
-#'
-`+.gg` <- function(e1, e2) {
-  stopifnot(inherits(e1, "ggcall"))
-  validate_ggplot()
-  plot <- utils::getFromNamespace("+.gg", "ggplot2")(e1, e2)
-
-  # Append to the existing history
-  if (!is.null(attr(e1, "ggcall"))) {
-    history <- attr(e1, "ggcall")
-  } else {
-    history <- list()
-  }
-  history <- c(history, list(substitute(e2)))
-  attr(plot, "ggcall") <- history
-
-  if (!identical(attr(e1, "ggcall_env_last"), parent.frame())) {
-    attr(plot, "ggcall_env") <- merge_env(attr(plot, "ggcall_env"), parent.frame())
-  }
-
-  attr(plot, "ggcall_env_last") <- parent.frame()
-  plot
-}
-
 #' Retrieve Construction Call from ggplot Object
 #'
 #' Extracts the complete history of a ggplot object's construction,
