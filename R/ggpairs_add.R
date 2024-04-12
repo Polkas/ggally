@@ -44,7 +44,25 @@
 #' p_(pm + extra)
 "+.gg" <- function(e1, e2) {
   if (!is.ggmatrix(e1)) {
-    return(e1 %+% e2)
+    stopifnot(inherits(e1, "ggcall"))
+    validate_ggplot()
+    plot <- utils::getFromNamespace("+.gg", "ggplot2")(e1, e2)
+
+    # Append to the existing history
+    if (!is.null(attr(e1, "ggcall"))) {
+      history <- attr(e1, "ggcall")
+    } else {
+      history <- list()
+    }
+    history <- c(history, list(substitute(e2)))
+    attr(plot, "ggcall") <- history
+
+    if (!identical(attr(e1, "ggcall_env_last"), parent.frame())) {
+      attr(plot, "ggcall_env") <- merge_env(attr(plot, "ggcall_env"), parent.frame())
+    }
+
+    attr(plot, "ggcall_env_last") <- parent.frame()
+    return(plot)
   }
 
   if (is.null(e1$gg)) {
