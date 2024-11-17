@@ -44,24 +44,34 @@
 #' p_(pm + extra)
 "+.gg" <- function(e1, e2) {
   if (!is.ggmatrix(e1)) {
-    stopifnot(inherits(e1, "ggcall"))
     validate_ggplot()
-    plot <- utils::getFromNamespace("+.gg", "ggplot2")(e1, e2)
-
-    # Append to the existing history
-    if (!is.null(attr(e1, "ggcall"))) {
-      history <- attr(e1, "ggcall")
+  
+    gg_plus_function <- utils::getFromNamespace("+.gg", "ggplot2")
+  
+    if (inherits(e1, "ggcall")) {
+      if (inherits(e2, "ggcall")) {
+        if (!"patchwork" %in% loadedNamespaces()) {
+          stop("patchwork package has to be library/require first.")
+        }
+        newcall <- ggcall(e2)
+      } else {
+        newcall <- substitute(e2)
+      }
+  
+      plot <- gg_plus_function(e1, e2)
+      # substitute is faster than bquote
+      attr(plot, "ggcall") <- substitute(lhs + rhs, env = list(lhs = ggcall(e1), rhs = newcall))
+  
+      if (!identical(attr(e1, "ggcall_env_last"), parent.frame())) {
+        attr(plot, "ggcall_env") <- merge_env(attr(e1, "ggcall_env"), parent.frame())
+      }
+  
+      attr(plot, "ggcall_env_last") <- parent.frame()
+      class(plot) <- unique(c("ggcall", class(plot)))
     } else {
-      history <- list()
+      plot <- gg_plus_function(e1, e2)
     }
-    history <- c(history, list(substitute(e2)))
-    attr(plot, "ggcall") <- history
-
-    if (!identical(attr(e1, "ggcall_env_last"), parent.frame())) {
-      attr(plot, "ggcall_env") <- merge_env(attr(plot, "ggcall_env"), parent.frame())
-    }
-
-    attr(plot, "ggcall_env_last") <- parent.frame()
+  
     return(plot)
   }
 
